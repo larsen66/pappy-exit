@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="my-products">
+    <div class="page-header">
+        <h1>Мои объявления</h1>
+        <a href="{% url 'catalog:product_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Разместить объявление
+        </a>
+    </div>
+
+    <div class="status-filters">
+        <a href="{% url 'catalog:my_products' %}" 
+           class="status-link {% if not current_status %}active{% endif %}">
+            Все
+        </a>
+        <a href="{% url 'catalog:my_products' %}?status=active" 
+           class="status-link {% if current_status == 'active' %}active{% endif %}">
+            Активные
+        </a>
+        <a href="{% url 'catalog:my_products' %}?status=pending" 
+           class="status-link {% if current_status == 'pending' %}active{% endif %}">
+            На модерации
+        </a>
+        <a href="{% url 'catalog:my_products' %}?status=blocked" 
+           class="status-link {% if current_status == 'blocked' %}active{% endif %}">
+            Заблокированные
+        </a>
+        <a href="{% url 'catalog:my_products' %}?status=archived" 
+           class="status-link {% if current_status == 'archived' %}active{% endif %}">
+            В архиве
+        </a>
+    </div>
+
+    {% if products %}
+    <div class="products-list">
+        {% for product in products %}
+        <div class="product-item">
+            <div class="product-image">
+                {% if product.images.exists %}
+                    <img src="{{ product.images.first.image.url }}" alt="{{ product.title }}">
+                {% else %}
+                    <img src="{% static 'images/no-image.png' %}" alt="Нет изображения">
+                {% endif %}
+            </div>
+            
+            <div class="product-info">
+                <h3 class="product-title">
+                    <a href="{% url 'catalog:product_detail' product.slug %}">{{ product.title }}</a>
+                </h3>
+                <p class="product-price">{{ product.price }} ₽</p>
+                
+                <div class="product-stats">
+                    <span class="views-count">
+                        <i class="fas fa-eye"></i> {{ product.views }} просмотров
+                    </span>
+                    <span class="favorites-count">
+                        <i class="fas fa-heart"></i> {{ product.favorited_by.count }} в избранном
+                    </span>
+                </div>
+
+                <div class="product-meta">
+                    <span class="product-status status-{{ product.status }}">
+                        {{ product.get_status_display }}
+                    </span>
+                    <span class="product-date">
+                        <i class="far fa-clock"></i> Создано {{ product.created|date:"d.m.Y" }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="product-actions">
+                <a href="{% url 'catalog:product_edit' product.slug %}" class="btn btn-outline-primary">
+                    <i class="fas fa-edit"></i> Редактировать
+                </a>
+                
+                {% if product.status == 'active' %}
+                <button type="button" class="btn btn-outline-warning" 
+                        onclick="updateStatus('{{ product.id }}', 'archived')">
+                    <i class="fas fa-archive"></i> В архив
+                </button>
+                {% elif product.status == 'archived' %}
+                <button type="button" class="btn btn-outline-success"
+                        onclick="updateStatus('{{ product.id }}', 'active')">
+                    <i class="fas fa-redo"></i> Активировать
+                </button>
+                {% endif %}
+
+                <button type="button" class="btn btn-outline-danger"
+                        onclick="deleteProduct('{{ product.id }}')">
+                    <i class="fas fa-trash"></i> Удалить
+                </button>
+            </div>
+
+            {% if product.status == 'blocked' %}
+            <div class="block-reason">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>{{ product.block_reason }}</p>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if products.paginator.num_pages > 1 %}
+    <nav class="pagination">
+        <ul class="pagination-list">
+            {% if products.has_previous %}
+            <li>
+                <a href="?page={{ products.previous_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}"
+                   class="pagination-link">
+                    <i class="fas fa-chevron-left"></i> Назад
+                </a>
+            </li>
+            {% endif %}
+
+            {% for num in products.paginator.page_range %}
+            <li>
+                <a href="?page={{ num }}{% if current_status %}&status={{ current_status }}{% endif %}"
+                   class="pagination-link {% if num == products.number %}active{% endif %}">
+                    {{ num }}
+                </a>
+            </li>
+            {% endfor %}
+
+            {% if products.has_next %}
+            <li>
+                <a href="?page={{ products.next_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}"
+                   class="pagination-link">
+                    Вперед <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="no-products">
+        <p>У вас пока нет объявлений{% if current_status %} со статусом "{{ current_status }}"{% endif %}.</p>
+        <a href="{% url 'catalog:product_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Разместить объявление
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function updateStatus(productId, status) {
+    if (!confirm('Вы уверены, что хотите изменить статус объявления?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/products/${productId}/status/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({ status })
+        });
+
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            const data = await response.json();
+            alert(data.error || 'Произошла ошибка при обновлении статуса');
+        }
+    } catch (error) {
+        alert('Произошла ошибка при обновлении статуса');
+    }
+}
+
+async function deleteProduct(productId) {
+    if (!confirm('Вы уверены, что хотите удалить это объявление?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/products/${productId}/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        });
+
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            const data = await response.json();
+            alert(data.error || 'Произошла ошибка при удалении объявления');
+        }
+    } catch (error) {
+        alert('Произошла ошибка при удалении объявления');
+    }
+}
+</script>
+{% endblock %} 

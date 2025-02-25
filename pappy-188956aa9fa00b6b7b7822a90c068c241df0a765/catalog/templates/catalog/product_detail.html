@@ -1,0 +1,201 @@
+{% extends "catalog/base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{{ product.title }} | {{ block.super }}{% endblock %}
+
+{% block catalog_content %}
+<div class="product-detail">
+    <div class="product-gallery">
+        <div class="main-image">
+            {% if product.images.exists %}
+                <img src="{{ product.images.first.image.url }}" alt="{{ product.title }}" id="main-image">
+            {% else %}
+                <img src="{% static 'images/no-image.png' %}" alt="No image">
+            {% endif %}
+        </div>
+        {% if product.images.count > 1 %}
+        <div class="thumbnails">
+            {% for image in product.images.all %}
+            <button class="thumbnail-btn {% if forloop.first %}active{% endif %}" 
+                    onclick="changeMainImage('{{ image.image.url }}')"
+                    title="{% trans 'View image' %} {{ forloop.counter }}">
+                <img src="{{ image.image.url }}" alt="{{ product.title }} - {% trans 'Image' %} {{ forloop.counter }}">
+            </button>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="product-info">
+        <div class="product-header">
+            <h1>{{ product.title }}</h1>
+            <div class="product-meta">
+                <span class="views-count">
+                    <i class="fas fa-eye"></i> {{ product.views }}
+                </span>
+                <span class="publication-date">
+                    <i class="far fa-calendar"></i> {{ product.created|date:"d.m.Y" }}
+                </span>
+            </div>
+        </div>
+
+        <div class="price-section">
+            <div class="product-price">{{ product.price }} ₽</div>
+            {% if user.is_authenticated and user != product.seller %}
+            <button class="favorite-btn {% if product in user.favorites.all %}active{% endif %}"
+                    data-product-id="{{ product.id }}"
+                    title="{% trans 'Add to favorites' %}">
+                <i class="fas fa-heart"></i>
+            </button>
+            {% endif %}
+        </div>
+
+        <div class="product-details">
+            <div class="detail-item">
+                <span class="detail-label">{% trans "Condition" %}:</span>
+                <span class="detail-value">{{ product.get_condition_display }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">{% trans "Category" %}:</span>
+                <span class="detail-value">
+                    <a href="{{ product.category.get_absolute_url }}">{{ product.category.name }}</a>
+                </span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">{% trans "Location" %}:</span>
+                <span class="detail-value">{{ product.location }}</span>
+            </div>
+        </div>
+
+        <div class="product-description">
+            <h2>{% trans "Description" %}</h2>
+            {{ product.description|linebreaks }}
+        </div>
+
+        <div class="seller-info">
+            <div class="seller-header">
+                <div class="seller-avatar">
+                    {% if product.seller.avatar %}
+                        <img src="{{ product.seller.avatar.url }}" alt="{{ product.seller }}">
+                    {% else %}
+                        <img src="{% static 'images/default-avatar.png' %}" alt="Default avatar">
+                    {% endif %}
+                </div>
+                <div class="seller-details">
+                    <h3>{{ product.seller.get_full_name|default:product.seller }}</h3>
+                    <p class="seller-meta">
+                        {% trans "On site since" %} {{ product.seller.date_joined|date:"F Y" }}
+                        {% if product.seller.seller_profile.is_verified %}
+                        <span class="verified-badge" title="{% trans 'Verified seller' %}">
+                            <i class="fas fa-check-circle"></i>
+                        </span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            {% if user.is_authenticated and user != product.seller %}
+            <div class="seller-actions">
+                <button class="btn btn-primary" onclick="showMessageForm()">
+                    <i class="fas fa-envelope"></i> {% trans "Message" %}
+                </button>
+                <a href="tel:{{ product.seller.phone }}" class="btn btn-outline-primary">
+                    <i class="fas fa-phone"></i> {% trans "Call" %}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if similar_products %}
+<section class="similar-products">
+    <h2>{% trans "Similar products" %}</h2>
+    <div class="products-grid">
+        {% for product in similar_products %}
+        <div class="product-card">
+            <div class="product-image">
+                {% if product.images.exists %}
+                    <img src="{{ product.images.first.image.url }}" alt="{{ product.title }}">
+                {% else %}
+                    <img src="{% static 'images/no-image.png' %}" alt="No image">
+                {% endif %}
+            </div>
+            <div class="product-info">
+                <h3 class="product-title">
+                    <a href="{{ product.get_absolute_url }}">{{ product.title }}</a>
+                </h3>
+                <div class="product-price">{{ product.price }} ₽</div>
+                <div class="product-meta">
+                    <span class="product-location">{{ product.location }}</span>
+                    <span class="product-date">{{ product.created|date:"d.m.Y" }}</span>
+                </div>
+                {% if user.is_authenticated %}
+                <button class="favorite-btn {% if product in user.favorites.all %}active{% endif %}"
+                        data-product-id="{{ product.id }}"
+                        title="{% trans 'Add to favorites' %}">
+                    <i class="fas fa-heart"></i>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% if user.is_authenticated and user != product.seller %}
+<div class="message-modal" id="messageModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>{% trans "Send message to" %} {{ product.seller }}</h3>
+            <button class="close-btn" onclick="hideMessageForm()" title="{% trans 'Close' %}">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form method="post" action="{% url 'chat:send_message' %}" class="message-form">
+            {% csrf_token %}
+            <input type="hidden" name="recipient" value="{{ product.seller.id }}">
+            <input type="hidden" name="product" value="{{ product.id }}">
+            <div class="form-group">
+                <label for="message">{% trans "Your message" %}</label>
+                <textarea name="message" id="message" rows="4" class="form-control" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                {% trans "Send" %}
+            </button>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+function changeMainImage(imageUrl) {
+    document.getElementById('main-image').src = imageUrl;
+    document.querySelectorAll('.thumbnail-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.querySelector('img').src === imageUrl) {
+            btn.classList.add('active');
+        }
+    });
+}
+
+function showMessageForm() {
+    document.getElementById('messageModal').style.display = 'flex';
+}
+
+function hideMessageForm() {
+    document.getElementById('messageModal').style.display = 'none';
+}
+
+// Закрытие модального окна при клике вне его
+document.getElementById('messageModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideMessageForm();
+    }
+});
+</script>
+{% endblock %} 

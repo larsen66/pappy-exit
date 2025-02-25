@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="swiper-container">
+    <div id="card-stack" class="card-stack">
+        <!-- Карточки будут добавляться сюда динамически -->
+    </div>
+    
+    <div class="swipe-buttons">
+        <button id="dislike-btn" class="btn btn-danger rounded-circle">
+            <i class="fas fa-times"></i>
+        </button>
+        <button id="like-btn" class="btn btn-success rounded-circle">
+            <i class="fas fa-heart"></i>
+        </button>
+    </div>
+</div>
+
+<template id="card-template">
+    <div class="pet-card">
+        <img src="" class="card-img" alt="Pet Photo">
+        <div class="card-info">
+            <h3 class="pet-name"></h3>
+            <p class="pet-breed"></p>
+            <p class="pet-age"></p>
+            <p class="pet-description"></p>
+        </div>
+    </div>
+</template>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .swiper-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .card-stack {
+        position: relative;
+        height: 500px;
+    }
+    
+    .pet-card {
+        position: absolute;
+        width: 100%;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        transition: transform 0.3s;
+    }
+    
+    .card-img {
+        width: 100%;
+        height: 300px;
+        object-fit: cover;
+        border-radius: 10px 10px 0 0;
+    }
+    
+    .card-info {
+        padding: 15px;
+    }
+    
+    .swipe-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    .swipe-buttons button {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentCards = [];
+    let currentCardIndex = 0;
+    
+    async function loadCards() {
+        try {
+            const response = await fetch('/api/swipe/next_cards/');
+            const data = await response.json();
+            currentCards = data;
+            showNextCard();
+        } catch (error) {
+            console.error('Error loading cards:', error);
+        }
+    }
+    
+    function showNextCard() {
+        if (currentCardIndex >= currentCards.length) {
+            loadCards(); // Загрузить новые карточки
+            return;
+        }
+        
+        const cardData = currentCards[currentCardIndex];
+        const template = document.getElementById('card-template');
+        const card = template.content.cloneNode(true);
+        
+        // Заполняем данные карточки
+        card.querySelector('.card-img').src = cardData.pet.photo;
+        card.querySelector('.pet-name').textContent = cardData.pet.name;
+        card.querySelector('.pet-breed').textContent = cardData.pet.breed;
+        card.querySelector('.pet-age').textContent = `${cardData.pet.age} лет`;
+        card.querySelector('.pet-description').textContent = cardData.description;
+        
+        const cardStack = document.getElementById('card-stack');
+        cardStack.innerHTML = '';
+        cardStack.appendChild(card);
+    }
+    
+    async function processSwipe(direction) {
+        if (currentCardIndex >= currentCards.length) return;
+        
+        const cardId = currentCards[currentCardIndex].id;
+        try {
+            const response = await fetch(`/api/swipe/${cardId}/swipe/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ direction })
+            });
+            
+            const data = await response.json();
+            if (data.is_match) {
+                showMatchNotification();
+            }
+            
+            currentCardIndex++;
+            showNextCard();
+        } catch (error) {
+            console.error('Error processing swipe:', error);
+        }
+    }
+    
+    function showMatchNotification() {
+        // Показываем уведомление о совпадении
+        alert('У вас новое совпадение!');
+    }
+    
+    // Обработчики кнопок
+    document.getElementById('like-btn').addEventListener('click', () => processSwipe('LIKE'));
+    document.getElementById('dislike-btn').addEventListener('click', () => processSwipe('DISLIKE'));
+    
+    // Функция получения CSRF токена
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Загружаем первые карточки
+    loadCards();
+});
+</script>
+{% endblock %} 

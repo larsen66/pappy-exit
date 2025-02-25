@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Профиль специалиста | Паппи{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header">
+        <h1 class="page-title">Профиль специалиста</h1>
+        {% if profile.is_verified %}
+        <span class="verified-badge">
+            <i class="fas fa-check-circle"></i> Верифицированный специалист
+        </span>
+        {% endif %}
+    </div>
+    
+    <div class="profile-content">
+        <div class="profile-sidebar">
+            <div class="profile-menu">
+                <a href="{% url 'user_profile:settings' %}" class="menu-item">
+                    <i class="fas fa-user"></i> Основные настройки
+                </a>
+                <a href="{% url 'user_profile:specialist_profile' %}" class="menu-item active">
+                    <i class="fas fa-user-md"></i> Профиль специалиста
+                </a>
+            </div>
+            
+            <div class="profile-stats">
+                <h3>Статистика</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-value">{{ user.products.count }}</span>
+                        <span class="stat-label">Объявлений</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">{{ user.products.filter(status='active').count }}</span>
+                        <span class="stat-label">Активных</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">{{ profile.experience_years }}</span>
+                        <span class="stat-label">Лет опыта</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="profile-main">
+            <div class="profile-section">
+                <form method="post" class="profile-form">
+                    {% csrf_token %}
+                    
+                    <div class="form-row">
+                        <div class="col-md-6">
+                            {{ form.specialization|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.experience_years|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="col-12">
+                            {{ form.services|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="col-12">
+                            {{ form.price_range|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Сохранить изменения
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            {% if profile.certificates %}
+            <div class="profile-section">
+                <h3>Сертификаты</h3>
+                <div class="certificates-preview">
+                    <a href="{{ profile.certificates.url }}" target="_blank" class="certificate-link">
+                        <i class="fas fa-file-pdf"></i>
+                        Просмотреть сертификаты
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/profile.js' %}"></script>
+{% endblock %} 

@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Лайки | Паппи{% endblock %}
+
+{% block content %}
+<div class="matches-container">
+    <div class="matches-header">
+        <h1>Лайки</h1>
+        <p class="text-muted">Здесь отображаются объявления, которые вам понравились</p>
+    </div>
+
+    {% if likes %}
+        <div class="matches-grid">
+            {% for like in likes %}
+                <div class="match-card">
+                    <div class="card">
+                        {% if like.announcement.images.exists %}
+                            <img src="{{ like.announcement.images.first.image.url }}" 
+                                 class="card-img-top" 
+                                 alt="{{ like.announcement.title }}">
+                        {% else %}
+                            <img src="{% static 'images/no-image.png' %}" 
+                                 class="card-img-top" 
+                                 alt="Нет фото">
+                        {% endif %}
+
+                        <div class="card-body">
+                            <h5 class="card-title">{{ like.announcement.title }}</h5>
+                            
+                            <div class="pet-details">
+                                <div class="detail-item">
+                                    <i class="fas fa-paw"></i>
+                                    <span>{{ like.announcement.animal_details.species }} - {{ like.announcement.animal_details.breed }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <i class="fas fa-birthday-cake"></i>
+                                    <span>{{ like.announcement.animal_details.age }} лет</span>
+                                </div>
+                                <div class="detail-item">
+                                    <i class="fas {% if like.announcement.animal_details.gender == 'M' %}fa-mars{% else %}fa-venus{% endif %}"></i>
+                                    <span>{{ like.announcement.animal_details.get_gender_display }}</span>
+                                </div>
+                            </div>
+
+                            <div class="author-info">
+                                <img src="{{ like.announcement.author.avatar.url|default:'/static/images/default-avatar.png' }}" 
+                                     class="author-avatar" 
+                                     alt="{{ like.announcement.author.get_full_name }}">
+                                <div class="author-details">
+                                    <span class="author-name">{{ like.announcement.author.get_full_name }}</span>
+                                    <span class="text-muted">{{ like.created_at|date:"d.m.Y" }}</span>
+                                </div>
+                            </div>
+
+                            <div class="card-actions">
+                                <a href="{% url 'chat:dialog' like.announcement.author.id %}" 
+                                   class="btn btn-primary">
+                                    <i class="fas fa-comments"></i> Написать сообщение
+                                </a>
+                                <a href="{% url 'announcements:detail' like.announcement.id %}" 
+                                   class="btn btn-outline-primary">
+                                    <i class="fas fa-eye"></i> Посмотреть объявление
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="no-matches">
+            <div class="message">
+                <i class="fas fa-heart-broken"></i>
+                <h3>У вас пока нет лайков</h3>
+                <p>Начните искать питомцев и ставьте лайки понравившимся объявлениям</p>
+                <a href="{% url 'pets:swipe' %}" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Начать поиск
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .matches-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .matches-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .matches-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .match-card {
+        transition: transform 0.2s;
+    }
+
+    .match-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .card {
+        height: 100%;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .card-img-top {
+        height: 200px;
+        object-fit: cover;
+    }
+
+    .pet-details {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 10px 0;
+    }
+
+    .detail-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        background: #f5f5f5;
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 0.9em;
+    }
+
+    .author-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 15px 0;
+        padding: 10px;
+        background: #f9f9f9;
+        border-radius: 8px;
+    }
+
+    .author-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .author-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .author-name {
+        font-weight: 500;
+    }
+
+    .card-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .no-matches {
+        text-align: center;
+        padding: 50px 20px;
+    }
+
+    .no-matches .message {
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    .no-matches i {
+        font-size: 48px;
+        color: #dc3545;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %} 

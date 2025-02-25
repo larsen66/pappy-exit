@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "My Announcements" %}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">{% trans "Filter by Status" %}</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'announcements:my_announcements' %}" 
+                       class="list-group-item list-group-item-action {% if not request.GET.status %}active{% endif %}">
+                        {% trans "All" %}
+                    </a>
+                    {% for status, label in announcement.STATUS_CHOICES %}
+                        <a href="{% url 'announcements:my_announcements' %}?status={{ status }}" 
+                           class="list-group-item list-group-item-action {% if request.GET.status == status %}active{% endif %}">
+                            {{ label }}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="d-grid">
+                <div class="dropdown">
+                    <button class="btn btn-primary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown">
+                        {% trans "Create New Announcement" %}
+                    </button>
+                    <ul class="dropdown-menu w-100">
+                        <li>
+                            <a class="dropdown-item" href="{% url 'announcements:create' 'sale' %}">
+                                {% trans "Sale Announcement" %}
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'announcements:create' 'mating' %}">
+                                {% trans "Mating Announcement" %}
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'announcements:create' 'lost' %}">
+                                {% trans "Report Lost Pet" %}
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'announcements:create' 'found' %}">
+                                {% trans "Report Found Pet" %}
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Announcements List -->
+        <div class="col-md-9">
+            {% if announcements %}
+                {% regroup announcements by get_status_display as status_list %}
+                
+                {% for status in status_list %}
+                    <h3 class="mb-4">{{ status.grouper }}</h3>
+                    
+                    <div class="row row-cols-1 row-cols-md-2 g-4 mb-5">
+                        {% for announcement in status.list %}
+                            <div class="col">
+                                <div class="card h-100">
+                                    {% if announcement.images.exists %}
+                                        <img src="{{ announcement.images.first.image.url }}" 
+                                             class="card-img-top" 
+                                             alt="{{ announcement.title }}"
+                                             style="height: 200px; object-fit: cover;">
+                                    {% endif %}
+                                    
+                                    <div class="card-body">
+                                        <h5 class="card-title">
+                                            {% if announcement.is_premium %}
+                                                <i class="fas fa-star text-warning"></i>
+                                            {% endif %}
+                                            {{ announcement.title }}
+                                        </h5>
+                                        
+                                        <p class="card-text text-muted">
+                                            {{ announcement.description|truncatewords:20 }}
+                                        </p>
+                                        
+                                        {% if announcement.type == 'sale' and announcement.saleannouncement %}
+                                            <p class="card-text">
+                                                <strong>{% trans "Price" %}:</strong>
+                                                {{ announcement.saleannouncement.price }}
+                                                {% if announcement.saleannouncement.is_negotiable %}
+                                                    <small class="text-muted">{% trans "(Negotiable)" %}</small>
+                                                {% endif %}
+                                            </p>
+                                        {% endif %}
+                                        
+                                        <div class="d-flex justify-content-between align-items-center mt-3">
+                                            <div>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-eye"></i> {{ announcement.views_count }}
+                                                </small>
+                                                <small class="text-muted ms-2">
+                                                    {{ announcement.created_at|timesince }} {% trans "ago" %}
+                                                </small>
+                                            </div>
+                                            
+                                            {% if announcement.status == 'draft' %}
+                                                <span class="badge bg-secondary">{% trans "Draft" %}</span>
+                                            {% elif announcement.status == 'pending' %}
+                                                <span class="badge bg-warning">{% trans "Pending Review" %}</span>
+                                            {% elif announcement.status == 'active' %}
+                                                <span class="badge bg-success">{% trans "Active" %}</span>
+                                            {% elif announcement.status == 'archived' %}
+                                                <span class="badge bg-info">{% trans "Archived" %}</span>
+                                            {% elif announcement.status == 'blocked' %}
+                                                <span class="badge bg-danger">{% trans "Blocked" %}</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card-footer bg-transparent">
+                                        <div class="btn-group w-100">
+                                            <a href="{% url 'announcements:detail' announcement.pk %}" 
+                                               class="btn btn-outline-primary">
+                                                {% trans "View" %}
+                                            </a>
+                                            <a href="{% url 'announcements:edit' announcement.pk %}" 
+                                               class="btn btn-outline-warning">
+                                                {% trans "Edit" %}
+                                            </a>
+                                            <button type="button" 
+                                                    class="btn btn-outline-danger" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#deleteModal{{ announcement.pk }}">
+                                                {% trans "Delete" %}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Delete Modal -->
+                            <div class="modal fade" id="deleteModal{{ announcement.pk }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">{% trans "Delete Announcement" %}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% trans 'Close' %}"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>{% trans "Are you sure you want to delete this announcement? This action cannot be undone." %}</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                {% trans "Cancel" %}
+                                            </button>
+                                            <form method="post" action="{% url 'announcements:delete' announcement.pk %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-danger">
+                                                    {% trans "Delete" %}
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-info">
+                    <h4 class="alert-heading">{% trans "No Announcements Yet" %}</h4>
+                    <p>{% trans "You haven't created any announcements yet. Click the 'Create New Announcement' button to get started." %}</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% trans "Edit Announcement" %} - {{ announcement.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">{% trans "Edit Announcement" %}</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <h4>{% trans "Basic Information" %}</h4>
+                            {{ announcement_form|crispy }}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h4>{% trans "Images" %}</h4>
+                            {% if announcement.images.exists %}
+                                <div class="mb-3">
+                                    <h5>{% trans "Current Images" %}</h5>
+                                    <div class="row">
+                                        {% for image in announcement.images.all %}
+                                            <div class="col-md-4 mb-3">
+                                                <div class="card">
+                                                    <img src="{{ image.image.url }}" 
+                                                         class="card-img-top" 
+                                                         alt="{% trans 'Announcement image' %} {{ forloop.counter }}"
+                                                         style="height: 150px; object-fit: cover;">
+                                                    <div class="card-body p-2">
+                                                        <div class="form-check">
+                                                            <input type="checkbox" 
+                                                                   name="delete_image_{{ image.id }}" 
+                                                                   id="delete_image_{{ image.id }}" 
+                                                                   class="form-check-input">
+                                                            <label class="form-check-label" for="delete_image_{{ image.id }}">
+                                                                {% trans "Delete" %}
+                                                            </label>
+                                                        </div>
+                                                        {% if image.is_main %}
+                                                            <span class="badge bg-primary">{% trans "Main Image" %}</span>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                            
+                            <h5>{% trans "Add New Images" %}</h5>
+                            <p class="text-muted">
+                                {% trans "Add clear photos of your pet. The first image will be used as the main image if no main image is set." %}
+                            </p>
+                            {{ image_form|crispy }}
+                        </div>
+                        
+                        {% if pet_form %}
+                            <div class="mb-4">
+                                <h4>{% trans "Pet Information" %}</h4>
+                                {{ pet_form|crispy }}
+                            </div>
+                        {% endif %}
+                        
+                        {% if specific_form %}
+                            <div class="mb-4">
+                                <h4>
+                                    {% if announcement.type == 'sale' %}
+                                        {% trans "Sale Information" %}
+                                    {% elif announcement.type == 'mating' %}
+                                        {% trans "Mating Information" %}
+                                    {% elif announcement.type == 'lost' %}
+                                        {% trans "Lost Pet Information" %}
+                                    {% elif announcement.type == 'found' %}
+                                        {% trans "Found Pet Information" %}
+                                    {% endif %}
+                                </h4>
+                                {{ specific_form|crispy }}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                {% trans "Save Changes" %}
+                            </button>
+                            <a href="{% url 'announcements:detail' announcement.pk %}" class="btn btn-outline-secondary">
+                                {% trans "Cancel" %}
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Preview uploaded images
+    document.querySelector('input[type="file"]').addEventListener('change', function(e) {
+        const preview = document.getElementById('image-preview');
+        if (!preview) {
+            const previewDiv = document.createElement('div');
+            previewDiv.id = 'image-preview';
+            previewDiv.className = 'mt-3';
+            this.parentNode.appendChild(previewDiv);
+        }
+        
+        const files = e.target.files;
+        preview.innerHTML = '';
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if (!file.type.startsWith('image/')) continue;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.className = 'img-thumbnail me-2 mb-2';
+                img.style.maxHeight = '150px';
+                preview.appendChild(img);
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+</script>
+{% endblock %} 

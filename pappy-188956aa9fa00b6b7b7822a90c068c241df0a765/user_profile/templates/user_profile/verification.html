@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Верификация | Паппи{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header">
+        <h1 class="page-title">Верификация аккаунта</h1>
+    </div>
+    
+    <div class="profile-content">
+        <div class="profile-sidebar">
+            <div class="profile-menu">
+                <a href="{% url 'user_profile:settings' %}" class="menu-item">
+                    <i class="fas fa-user"></i> Основные настройки
+                </a>
+                <a href="{% url 'user_profile:verification' %}" class="menu-item active">
+                    <i class="fas fa-user-check"></i> Верификация
+                </a>
+            </div>
+            
+            <div class="verification-info">
+                <h3>Преимущества верификации</h3>
+                <ul class="benefits-list">
+                    <li>
+                        <i class="fas fa-check"></i>
+                        Повышенное доверие покупателей
+                    </li>
+                    <li>
+                        <i class="fas fa-check"></i>
+                        Приоритет в поиске
+                    </li>
+                    <li>
+                        <i class="fas fa-check"></i>
+                        Специальный значок верификации
+                    </li>
+                    <li>
+                        <i class="fas fa-check"></i>
+                        Доступ к расширенной статистике
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="profile-main">
+            <div class="profile-section">
+                <div class="verification-type-selector">
+                    <h3>Выберите тип аккаунта</h3>
+                    <div class="type-options">
+                        <a href="{% url 'user_profile:verification' %}" class="type-option {% if not is_specialist %}active{% endif %}">
+                            <i class="fas fa-store"></i>
+                            <h4>Продавец</h4>
+                            <p>Для частных лиц, ИП и компаний, занимающихся продажей животных</p>
+                        </a>
+                        <a href="{% url 'user_profile:verification' %}?type=specialist" class="type-option {% if is_specialist %}active{% endif %}">
+                            <i class="fas fa-user-md"></i>
+                            <h4>Специалист</h4>
+                            <p>Для ветеринаров, грумеров и других специалистов по работе с животными</p>
+                        </a>
+                    </div>
+                </div>
+                
+                <form method="post" enctype="multipart/form-data" class="verification-form">
+                    {% csrf_token %}
+                    
+                    <div class="form-row">
+                        <div class="col-12">
+                            {{ form.seller_type|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="form-row company-fields" style="display: none;">
+                        <div class="col-md-6">
+                            {{ form.company_name|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.inn|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    {% if is_specialist %}
+                    <div class="form-row">
+                        <div class="col-md-6">
+                            {{ form.specialization|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.experience_years|as_crispy_field }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="form-row">
+                        <div class="col-12">
+                            {{ form.document_scan|as_crispy_field }}
+                            <small class="form-text text-muted">
+                                Загрузите скан паспорта (для частных лиц) или документы о регистрации (для ИП/компаний)
+                            </small>
+                        </div>
+                    </div>
+                    
+                    {% if is_specialist %}
+                    <div class="form-row">
+                        <div class="col-12">
+                            {{ form.certificates|as_crispy_field }}
+                            <small class="form-text text-muted">
+                                Загрузите сертификаты, дипломы и другие документы, подтверждающие вашу квалификацию
+                            </small>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Отправить на проверку
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/profile.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sellerTypeSelect = document.querySelector('#id_seller_type');
+    const companyFields = document.querySelector('.company-fields');
+    
+    function toggleCompanyFields() {
+        const selectedType = sellerTypeSelect.value;
+        if (selectedType === 'entrepreneur' || selectedType === 'company') {
+            companyFields.style.display = 'flex';
+        } else {
+            companyFields.style.display = 'none';
+        }
+    }
+    
+    sellerTypeSelect.addEventListener('change', toggleCompanyFields);
+    toggleCompanyFields(); // Вызываем при загрузке страницы
+    
+    // Обработка загрузки файлов
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    fileInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            const fileName = this.files[0]?.name;
+            if (fileName) {
+                const label = this.parentElement.querySelector('.custom-file-label');
+                if (label) {
+                    label.textContent = fileName;
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

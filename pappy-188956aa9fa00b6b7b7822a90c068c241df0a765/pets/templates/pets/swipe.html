@@ -1,0 +1,474 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Котопсиндер{% endblock %}
+
+{% block content %}
+<div class="swipe-container">
+    <!-- Header -->
+    <div class="header">
+        <button class="menu-button"><i class="fas fa-bars"></i></button>
+        <div class="header-content">
+            <h1>Котопсиндер</h1>
+            <div class="subtitle">
+                Поиск <span id="announcement-type">{{ announcement_type|default:"животных" }}</span> (<span class="change-link" id="change-type">Сменить</span>)
+            </div>
+        </div>
+        <button class="settings-button"><i class="fas fa-cog"></i></button>
+    </div>
+
+    <!-- Distance indicator -->
+    <div class="distance-indicator">
+        <i class="fas fa-map-marker-alt"></i> < 1 км
+    </div>
+
+    <!-- Card container -->
+    <div class="card-container" id="card-container">
+        {% if announcement %}
+            <div class="card" data-id="{{ announcement.id }}" data-type="{{ announcement_type }}">
+                <!-- Image gallery -->
+                <div class="image-gallery">
+                    {% if announcement.images.all %}
+                        <div class="gallery-container">
+                            {% for image in announcement.images.all %}
+                                <img src="{{ image.image.url }}" alt="Изображение" class="pet-image {% if forloop.first %}active{% endif %}">
+                            {% endfor %}
+                        </div>
+                        <!-- Dots pagination -->
+                        <div class="dots-pagination">
+                            {% for image in announcement.images.all %}
+                                <span class="dot {% if forloop.first %}active{% endif %}"></span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="no-image">
+                            <i class="fas fa-camera"></i>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Price section -->
+                <div class="price-section">
+                    <div class="current-price">{{ announcement.price }}₽</div>
+                    {% if announcement.old_price %}
+                        <div class="old-price">{{ announcement.old_price }}₽</div>
+                    {% endif %}
+                    <div class="heart-icon">
+                        <i class="far fa-heart"></i>
+                    </div>
+                </div>
+
+                <!-- Organization info -->
+                <div class="organization-info">
+                    <i class="fas fa-building"></i>
+                    <div class="org-details">
+                        <div class="org-name">{{ announcement.user.organization_name }}</div>
+                        <div class="rating">
+                            {% for i in "12345" %}
+                                <i class="fas fa-star"></i>
+                            {% endfor %}
+                            <span>({{ announcement.user.review_count }} отзывов)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Details section -->
+                {% if announcement_type == 'animals' %}
+                    <div class="pet-details">
+                        <div class="detail-line">
+                            {{ announcement.pet.species }} • {{ announcement.pet.breed }} • {{ announcement.pet.age }} • {{ announcement.pet.gender }}
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="specialist-details">
+                        <div class="detail-line">
+                            {{ announcement.specialist_type }} • {{ announcement.experience }} лет опыта
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="no-cards">
+                <p>Нет доступных объявлений</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Action buttons -->
+    <div class="action-buttons">
+        <button class="back-button"><i class="fas fa-arrow-left"></i></button>
+        <button class="skip-button">Пропустить</button>
+        <button class="choose-button">Выбрать</button>
+    </div>
+</div>
+
+<!-- Like notification -->
+<div class="notification" style="display: none;">
+    <i class="fas fa-check"></i>
+    <span>Вы увидите свой лайк в «Сообщениях»</span>
+</div>
+
+<style>
+.swipe-container {
+    position: relative;
+    height: 100vh;
+    background: #f5f5f5;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header-content {
+    text-align: center;
+}
+
+.header h1 {
+    font-size: 20px;
+    margin: 0;
+}
+
+.subtitle {
+    font-size: 14px;
+    color: #666;
+    user-select: none;
+}
+
+.change-link {
+    color: #ff3b30;
+    text-decoration: none;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.change-link:hover {
+    opacity: 0.8;
+}
+
+#announcement-type {
+    transition: opacity 0.2s ease;
+}
+
+.distance-indicator {
+    padding: 8px 16px;
+    background: white;
+    font-size: 14px;
+    color: #666;
+}
+
+.card-container {
+    position: relative;
+    height: calc(100vh - 180px);
+    overflow: hidden;
+}
+
+.card {
+    position: absolute;
+    width: 100%;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.image-gallery {
+    position: relative;
+    height: 300px;
+    background: #eee;
+}
+
+.price-section {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+}
+
+.current-price {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.old-price {
+    text-decoration: line-through;
+    color: #999;
+    margin-left: 8px;
+}
+
+.organization-info {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    border-top: 1px solid #eee;
+}
+
+.action-buttons {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 16px;
+    background: white;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+}
+
+.skip-button, .choose-button {
+    padding: 12px 24px;
+    border-radius: 24px;
+    border: none;
+    font-size: 16px;
+}
+
+.skip-button {
+    background: white;
+    border: 1px solid #000;
+}
+
+.choose-button {
+    background: black;
+    color: white;
+}
+
+.notification {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: black;
+    color: white;
+    padding: 16px;
+    text-align: center;
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+}
+
+.notification.show {
+    transform: translateY(0);
+}
+
+.specialist-details {
+    padding: 16px;
+    border-top: 1px solid #eee;
+}
+
+.detail-line {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.4;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cardContainer = document.getElementById('card-container');
+    const card = document.querySelector('.card');
+    const skipButton = document.querySelector('.skip-button');
+    const chooseButton = document.querySelector('.choose-button');
+    const backButton = document.querySelector('.back-button');
+    const notification = document.querySelector('.notification');
+    const changeTypeButton = document.getElementById('change-type');
+    const announcementType = document.getElementById('announcement-type');
+
+    let currentType = card ? card.dataset.type : 'animals';
+
+    // Type switching functionality
+    changeTypeButton.addEventListener('click', function() {
+        const newType = currentType === 'animals' ? 'specialists' : 'animals';
+        const newText = currentType === 'animals' ? 'специалистов' : 'животных';
+        
+        // Animate the text change
+        announcementType.style.opacity = '0';
+        setTimeout(() => {
+            announcementType.textContent = newText;
+            announcementType.style.opacity = '1';
+        }, 200);
+
+        // Update current type and fetch new cards
+        currentType = newType;
+        fetch(`/pets/swipe/?type=${newType}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                console.error('Error fetching cards:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    });
+
+    let startX = 0;
+    let currentX = 0;
+    let isDragging = false;
+
+    function showNotification() {
+        notification.style.display = 'block';
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 100);
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 300);
+        }, 2000);
+    }
+
+    function handleSwipe(direction) {
+        if (!card) return;
+        
+        const isLike = direction === 'right';
+        card.style.transform = `translateX(${direction === 'right' ? '100%' : '-100%'})`;
+        card.style.opacity = '0';
+        
+        if (isLike) {
+            showNotification();
+        }
+
+        // Send swipe action to server
+        fetch('/pets/swipe/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                announcement_id: card.dataset.id,
+                direction: isLike ? 'like' : 'dislike',
+                type: currentType
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.chat_url) {
+                setTimeout(() => {
+                    window.location.href = data.chat_url;
+                }, 2000);
+            } else {
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+
+    // Only add touch and button events if there is a card
+    if (card) {
+        // Touch events
+        card.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            isDragging = true;
+        });
+
+        card.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            
+            currentX = e.touches[0].clientX;
+            const diffX = currentX - startX;
+            const rotation = diffX / 20;
+            
+            card.style.transform = `translateX(${diffX}px) rotate(${rotation}deg)`;
+            
+            // Add tint based on swipe direction
+            if (diffX > 0) {
+                card.style.backgroundColor = `rgba(0, 255, 0, ${Math.abs(diffX) / 500})`;
+            } else {
+                card.style.backgroundColor = `rgba(255, 0, 0, ${Math.abs(diffX) / 500})`;
+            }
+        });
+
+        card.addEventListener('touchend', (e) => {
+            isDragging = false;
+            const diffX = currentX - startX;
+            
+            if (Math.abs(diffX) > 100) {
+                handleSwipe(diffX > 0 ? 'right' : 'left');
+            } else {
+                card.style.transform = '';
+                card.style.backgroundColor = '';
+            }
+        });
+
+        // Button events
+        skipButton.addEventListener('click', () => handleSwipe('left'));
+        chooseButton.addEventListener('click', () => handleSwipe('right'));
+    } else {
+        // Disable buttons if no card is present
+        if (skipButton) skipButton.disabled = true;
+        if (chooseButton) chooseButton.disabled = true;
+    }
+
+    // Back button functionality
+    if (backButton) {
+        backButton.addEventListener('click', () => {
+            fetch('/pets/undo-swipe/', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    }
+
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+
+{% endblock %} 

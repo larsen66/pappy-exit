@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ opponent.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="chat-container" data-dialog-id="{{ dialog.id }}">
+    <!-- Информация о собеседнике -->
+    <div class="chat-header">
+        <div class="opponent-info">
+            <div class="opponent-avatar">
+                {% if opponent.avatar %}
+                    <img src="{{ opponent.avatar.url }}" alt="{{ opponent.get_full_name }}">
+                {% else %}
+                    <div class="avatar-placeholder">
+                        {{ opponent.get_full_name|first|upper }}
+                    </div>
+                {% endif %}
+                <span class="status-indicator" id="online-status"></span>
+            </div>
+            <div class="opponent-details">
+                <h2>{{ opponent.get_full_name }}</h2>
+                <span class="status-text" id="status-text">Не в сети</span>
+            </div>
+        </div>
+        <div class="chat-actions">
+            <button class="btn btn-icon" title="Поиск по сообщениям">
+                <i class="fas fa-search"></i>
+            </button>
+            <button class="btn btn-icon" title="Настройки чата">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Область сообщений -->
+    <div class="messages-container" id="messages-container">
+        {% for message in messages %}
+        <div class="message {% if message.sender == request.user %}outgoing{% else %}incoming{% endif %}"
+             data-message-id="{{ message.id }}">
+            <div class="message-content">
+                {% if message.content %}
+                    <p>{{ message.content }}</p>
+                {% endif %}
+                
+                {% if message.attachment %}
+                    <div class="message-attachment">
+                        {% if message.attachment.is_image %}
+                            <img src="{{ message.attachment.file.url }}" alt="Изображение">
+                        {% else %}
+                            <div class="file-attachment">
+                                <i class="fas fa-file"></i>
+                                <span>{{ message.attachment.filename }}</span>
+                                <a href="{{ message.attachment.file.url }}" download>
+                                    <i class="fas fa-download"></i>
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                
+                {% if message.location %}
+                    <div class="location-message">
+                        <iframe src="https://www.openstreetmap.org/export/embed.html?bbox={{ message.location.longitude|add:'-0.01' }},{{ message.location.latitude|add:'-0.01' }},{{ message.location.longitude|add:'0.01' }},{{ message.location.latitude|add:'0.01' }}&marker={{ message.location.latitude }},{{ message.location.longitude }}"
+                                width="100%" height="200" frameborder="0"></iframe>
+                    </div>
+                {% endif %}
+                
+                {% if message.voice %}
+                    <div class="voice-message">
+                        <audio controls>
+                            <source src="{{ message.voice.file.url }}" type="audio/mpeg">
+                            Ваш браузер не поддерживает аудио элемент.
+                        </audio>
+                        <span class="voice-duration">{{ message.voice.duration }}с</span>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="message-meta">
+                <span class="time">{{ message.created_at|date:"H:i" }}</span>
+                {% if message.sender == request.user %}
+                    <span class="status">
+                        <i class="fas {% if message.is_read %}fa-check-double{% else %}fa-check{% endif %}"></i>
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Индикатор печати -->
+    <div class="typing-indicator" id="typing-indicator" style="display: none;">
+        <span class="typing-text">печатает...</span>
+        <div class="typing-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+    
+    <!-- Превью файлов -->
+    <div class="file-preview" id="file-preview" style="display: none;">
+        <div class="preview-header">
+            <h4>Прикрепленные файлы</h4>
+            <button class="btn btn-icon" id="clear-files">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="preview-content"></div>
+    </div>
+    
+    <!-- Форма отправки сообщения -->
+    <form class="message-form" id="message-form">
+        {% csrf_token %}
+        <div class="form-actions">
+            <button type="button" class="btn btn-icon" id="attach-file" title="Прикрепить файл">
+                <i class="fas fa-paperclip"></i>
+            </button>
+            <button type="button" class="btn btn-icon" id="send-location" title="Отправить геолокацию">
+                <i class="fas fa-map-marker-alt"></i>
+            </button>
+        </div>
+        
+        <div class="input-container">
+            <input type="text" id="message-input" placeholder="Введите сообщение...">
+            <button type="button" class="btn btn-icon" id="record-voice" title="Записать голосовое сообщение">
+                <i class="fas fa-microphone"></i>
+            </button>
+        </div>
+        
+        <button type="submit" class="btn btn-primary btn-icon">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/chat.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/chat.js' %}"></script>
+{% endblock %} 

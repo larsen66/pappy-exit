@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load i18n %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>{{ title }}</h2>
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4>{% trans "Основная информация" %}</h4>
+                {{ base_form|crispy }}
+            </div>
+        </div>
+        
+        {% if not is_edit %}
+            <div class="form-group mb-4">
+                <label for="announcement-type">{% trans "Тип объявления" %}</label>
+                <select id="announcement-type" class="form-control" name="type">
+                    {% for type_value, type_label in announcement_types %}
+                        <option value="{{ type_value }}">{{ type_label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        {% endif %}
+        
+        {% if details_form %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4>{% trans "Дополнительная информация" %}</h4>
+                    {{ details_form|crispy }}
+                </div>
+            </div>
+        {% endif %}
+        
+        <div class="form-group">
+            <button type="submit" class="btn btn-primary">
+                {% if is_edit %}
+                    {% trans "Сохранить изменения" %}
+                {% else %}
+                    {% trans "Создать объявление" %}
+                {% endif %}
+            </button>
+            <a href="{% url 'announcements:list' %}" class="btn btn-secondary">{% trans "Отмена" %}</a>
+        </div>
+    </form>
+</div>
+
+{% if not is_edit %}
+    {% block extra_js %}
+    <script>
+        document.getElementById('announcement-type').addEventListener('change', function() {
+            // Здесь можно добавить AJAX-запрос для загрузки соответствующей формы деталей
+            // или предварительно загрузить все формы и показывать нужную
+        });
+    </script>
+    {% endblock %}
+{% endif %}
+{% endblock %} 

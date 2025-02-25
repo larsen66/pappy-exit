@@ -1,0 +1,111 @@
+{% extends "catalog/base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Catalog" %} | {{ block.super }}{% endblock %}
+
+{% block catalog_content %}
+    {% if featured_products %}
+    <section class="featured-products">
+        <h2>{% trans "Recommended" %}</h2>
+        <div class="products-grid">
+            {% for product in featured_products %}
+            <div class="product-card">
+                <div class="product-image">
+                    {% if product.images.exists %}
+                        <img src="{{ product.images.first.image.url }}" alt="{{ product.title }}">
+                    {% else %}
+                        <img src="{% static 'images/no-image.png' %}" alt="No image">
+                    {% endif %}
+                </div>
+                <div class="product-info">
+                    <h3 class="product-title">
+                        <a href="{{ product.get_absolute_url }}">{{ product.title }}</a>
+                    </h3>
+                    <div class="product-price">{{ product.price }} ₽</div>
+                    <div class="product-meta">
+                        <span class="product-location">{{ product.location }}</span>
+                        <span class="product-date">{{ product.created|date:"d.m.Y" }}</span>
+                    </div>
+                    {% if user.is_authenticated %}
+                    <button class="favorite-btn {% if product in user.favorites.all %}active{% endif %}"
+                            data-product-id="{{ product.id }}"
+                            title="{% trans 'Add to favorites' %}">
+                        <i class="fas fa-heart"></i>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <section class="categories-section">
+        <h2>{% trans "Categories" %}</h2>
+        <div class="categories-grid">
+            {% for category in categories %}
+            <div class="category-card">
+                <a href="{{ category.get_absolute_url }}" class="category-link">
+                    {% if category.image %}
+                        <img src="{{ category.image.url }}" alt="{{ category.name }}" class="category-image">
+                    {% else %}
+                        <img src="{% static 'images/no-category-image.png' %}" alt="No image" class="category-image">
+                    {% endif %}
+                    <div class="category-info">
+                        <h3 class="category-title">{{ category.name }}</h3>
+                        {% if category.children.exists %}
+                        <span class="subcategories-count">
+                            {{ category.children.count }} {% trans "subcategories" %}
+                        </span>
+                        {% endif %}
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    {% if latest_products %}
+    <section class="latest-products">
+        <h2>{% trans "Latest listings" %}</h2>
+        <div class="products-grid">
+            {% for product in latest_products %}
+            <div class="product-card">
+                <div class="product-image">
+                    {% if product.images.exists %}
+                        <img src="{{ product.images.first.image.url }}" alt="{{ product.title }}">
+                    {% else %}
+                        <img src="{% static 'images/no-image.png' %}" alt="No image">
+                    {% endif %}
+                </div>
+                <div class="product-info">
+                    <h3 class="product-title">
+                        <a href="{{ product.get_absolute_url }}">{{ product.title }}</a>
+                    </h3>
+                    <div class="product-price">{{ product.price }} ₽</div>
+                    <div class="product-meta">
+                        <span class="product-location">{{ product.location }}</span>
+                        <span class="product-date">{{ product.created|date:"d.m.Y" }}</span>
+                    </div>
+                    {% if user.is_authenticated %}
+                    <button class="favorite-btn {% if product in user.favorites.all %}active{% endif %}"
+                            data-product-id="{{ product.id }}"
+                            title="{% trans 'Add to favorites' %}">
+                        <i class="fas fa-heart"></i>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% if latest_products.exists %}
+        <div class="view-all">
+            <a href="{% url 'catalog:category_detail' 'all' %}" class="btn btn-outline-primary">
+                {% trans "View all listings" %}
+            </a>
+        </div>
+        {% endif %}
+    </section>
+    {% endif %}
+{% endblock %} 

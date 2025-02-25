@@ -1,0 +1,12 @@
+!.coveragerc
+!.gitignore
+*.swp
+*.py[co]
+*~
+*\.egg*
+dist
+docs/_build
+payments/version.py
+.coverage
+coverage.xml
+build

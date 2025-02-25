@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="favorites-container">
+    <div class="page-header">
+        <h1>Избранное</h1>
+    </div>
+
+    {% if favorites %}
+    <div class="products-grid">
+        {% for favorite in favorites %}
+        <article class="product-card">
+            <div class="product-image">
+                {% if favorite.product.images.exists %}
+                    <img src="{{ favorite.product.images.first.image.url }}" alt="{{ favorite.product.title }}">
+                {% else %}
+                    <img src="{% static 'images/no-image.png' %}" alt="Нет изображения">
+                {% endif %}
+                <button class="favorite-btn active"
+                        data-product-id="{{ favorite.product.id }}"
+                        title="Удалить из избранного">
+                    <i class="fas fa-heart"></i>
+                </button>
+            </div>
+            <div class="product-info">
+                <h3 class="product-title">
+                    <a href="{% url 'catalog:product_detail' favorite.product.slug %}">{{ favorite.product.title }}</a>
+                </h3>
+                <p class="product-price">{{ favorite.product.price }} ₽</p>
+                <div class="product-meta">
+                    <span class="product-location">
+                        <i class="fas fa-map-marker-alt"></i> {{ favorite.product.location }}
+                    </span>
+                    <span class="product-date">
+                        <i class="far fa-clock"></i> {{ favorite.product.created|timesince }}
+                    </span>
+                </div>
+                <div class="seller-info">
+                    <span class="seller-name">
+                        <i class="fas fa-user"></i> {{ favorite.product.seller.get_full_name }}
+                    </span>
+                    {% if favorite.product.seller.is_verified %}
+                    <span class="verified-badge">
+                        <i class="fas fa-check-circle"></i> Проверенный продавец
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+
+    {% if favorites.paginator.num_pages > 1 %}
+    <nav class="pagination">
+        <ul class="pagination-list">
+            {% if favorites.has_previous %}
+            <li>
+                <a href="?page={{ favorites.previous_page_number }}" class="pagination-link">
+                    <i class="fas fa-chevron-left"></i> Назад
+                </a>
+            </li>
+            {% endif %}
+
+            {% for num in favorites.paginator.page_range %}
+            <li>
+                <a href="?page={{ num }}" class="pagination-link {% if num == favorites.number %}active{% endif %}">
+                    {{ num }}
+                </a>
+            </li>
+            {% endfor %}
+
+            {% if favorites.has_next %}
+            <li>
+                <a href="?page={{ favorites.next_page_number }}" class="pagination-link">
+                    Вперед <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="no-favorites">
+        <p>У вас пока нет избранных товаров.</p>
+        <a href="{% url 'catalog:home' %}" class="btn btn-primary">
+            <i class="fas fa-search"></i> Найти товары
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.favorite-btn').forEach(button => {
+        button.addEventListener('click', async function() {
+            const productId = this.dataset.productId;
+            
+            try {
+                const response = await fetch('{% url "catalog:toggle_favorite" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: `product_id=${productId}`
+                });
+
+                if (response.ok) {
+                    // Remove the product card from the grid
+                    this.closest('.product-card').remove();
+                    
+                    // Check if there are no more favorites
+                    const remainingProducts = document.querySelectorAll('.product-card');
+                    if (remainingProducts.length === 0) {
+                        location.reload(); // Reload to show the "no favorites" message
+                    }
+                } else {
+                    const data = await response.json();
+                    alert(data.error || 'Произошла ошибка при обновлении избранного');
+                }
+            } catch (error) {
+                alert('Произошла ошибка при обновлении избранного');
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

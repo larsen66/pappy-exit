@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ profile_user.get_full_name }} | Паппи{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header public-profile-header">
+        <div class="user-info">
+            {% if profile_user.avatar %}
+            <img src="{{ profile_user.avatar.url }}" alt="{{ profile_user.get_full_name }}" class="user-avatar">
+            {% else %}
+            <div class="avatar-placeholder">
+                {{ profile_user.get_full_name|first }}
+            </div>
+            {% endif %}
+            
+            <div class="user-details">
+                <h1 class="user-name">{{ profile_user.get_full_name }}</h1>
+                {% if seller_profile and seller_profile.is_verified %}
+                <span class="verified-badge">
+                    <i class="fas fa-check-circle"></i>
+                    {% if is_specialist %}
+                    Верифицированный специалист
+                    {% else %}
+                    Верифицированный продавец
+                    {% endif %}
+                </span>
+                {% endif %}
+                <p class="user-meta">На сайте с {{ profile_user.date_joined|date:"F Y" }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="profile-content">
+        <div class="profile-sidebar">
+            <div class="profile-stats">
+                <h3>Статистика</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-value">{{ profile_user.products.count }}</span>
+                        <span class="stat-label">Объявлений</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">{{ profile_user.products.filter(status='active').count }}</span>
+                        <span class="stat-label">Активных</span>
+                    </div>
+                    {% if seller_profile and seller_profile.is_verified %}
+                    <div class="stat-item">
+                        <span class="stat-value">{{ profile_user.products.filter(status='sold').count }}</span>
+                        <span class="stat-label">Проданных</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if seller_profile %}
+            <div class="seller-info">
+                {% if is_specialist %}
+                <div class="info-section">
+                    <h3>Специализация</h3>
+                    <p>{{ seller_profile.get_specialization_display }}</p>
+                    <p><strong>Опыт работы:</strong> {{ seller_profile.experience_years }} лет</p>
+                </div>
+                
+                {% if seller_profile.services %}
+                <div class="info-section">
+                    <h3>Услуги</h3>
+                    <p>{{ seller_profile.services|linebreaks }}</p>
+                </div>
+                {% endif %}
+                
+                {% if seller_profile.price_range %}
+                <div class="info-section">
+                    <h3>Ценовой диапазон</h3>
+                    <p>{{ seller_profile.price_range }}</p>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="info-section">
+                    <h3>О продавце</h3>
+                    {% if seller_profile.company_name %}
+                    <p><strong>Компания:</strong> {{ seller_profile.company_name }}</p>
+                    {% endif %}
+                    {% if seller_profile.description %}
+                    <p>{{ seller_profile.description|linebreaks }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                {% if seller_profile.website %}
+                <div class="info-section">
+                    <h3>Веб-сайт</h3>
+                    <a href="{{ seller_profile.website }}" target="_blank" rel="noopener noreferrer">
+                        {{ seller_profile.website }}
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="profile-main">
+            <div class="profile-section">
+                <h2>Активные объявления</h2>
+                <div class="products-grid">
+                    {% for product in profile_user.products.filter(status='active') %}
+                    <div class="product-card">
+                        {% if product.images.exists %}
+                        <img src="{{ product.images.first.image.url }}" alt="{{ product.title }}" class="product-image">
+                        {% else %}
+                        <div class="image-placeholder">
+                            <i class="fas fa-image"></i>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="product-info">
+                            <h3 class="product-title">
+                                <a href="{% url 'catalog:product_detail' product.slug %}">{{ product.title }}</a>
+                            </h3>
+                            <p class="product-price">{{ product.price }} ₽</p>
+                            <p class="product-meta">
+                                <i class="fas fa-map-marker-alt"></i> {{ product.location }}
+                                <span class="separator">•</span>
+                                <i class="fas fa-clock"></i> {{ product.created|date:"d.m.Y" }}
+                            </p>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="no-products">У пользователя пока нет активных объявлений</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %} 

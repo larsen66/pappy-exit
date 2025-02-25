@@ -1,0 +1,10 @@
+django-wysiwyg
+html5lib
+Pillow
+micawber
+docutils
+textile
+MarkDown
+pygments
+disqus
+#twitter-text-py

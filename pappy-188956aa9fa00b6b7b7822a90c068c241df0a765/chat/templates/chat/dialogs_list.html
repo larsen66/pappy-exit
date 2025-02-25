@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Сообщения{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <!-- Боковая панель со списком диалогов -->
+    <div class="dialogs-sidebar">
+        <div class="dialogs-header">
+            <h2>Сообщения</h2>
+            {% if unread_count %}
+            <span class="unread-badge">{{ unread_count }}</span>
+            {% endif %}
+        </div>
+        
+        <!-- Поиск по диалогам -->
+        <div class="search-box">
+            <input type="text" placeholder="Поиск по сообщениям..." id="message-search">
+        </div>
+        
+        <!-- Список диалогов -->
+        <div class="dialogs-list">
+            {% for dialog in dialogs %}
+            <div class="dialog-item {% if dialog.last_message and not dialog.last_message.is_read %}unread{% endif %}"
+                 data-dialog-id="{{ dialog.id }}">
+                <div class="dialog-avatar">
+                    {% with opponent=dialog.get_opponent %}
+                    {% if opponent.avatar %}
+                    <img src="{{ opponent.avatar.url }}" alt="{{ opponent.get_full_name }}">
+                    {% else %}
+                    <div class="avatar-placeholder">
+                        {{ opponent.get_full_name|first }}
+                    </div>
+                    {% endif %}
+                    </div>
+                    
+                    <div class="dialog-info">
+                        <div class="dialog-header">
+                            <span class="dialog-name">{{ opponent.get_full_name }}</span>
+                            {% if dialog.last_message %}
+                            <span class="dialog-time">
+                                {{ dialog.last_message.created_at|date:"H:i" }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="dialog-preview">
+                            {% if dialog.last_message %}
+                            <span class="last-message">
+                                {% if dialog.last_message.sender == request.user %}
+                                Вы:
+                                {% endif %}
+                                {{ dialog.last_message.content|truncatechars:50 }}
+                            </span>
+                            {% else %}
+                            <span class="no-messages">Нет сообщений</span>
+                            {% endif %}
+                        </div>
+                    {% endwith %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="no-dialogs">
+                <p>У вас пока нет диалогов</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/chat.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/chat.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Поиск по сообщениям
+        const searchInput = document.getElementById('message-search');
+        searchInput.addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase();
+            const dialogItems = document.querySelectorAll('.dialog-item');
+            
+            dialogItems.forEach(item => {
+                const name = item.querySelector('.dialog-name').textContent.toLowerCase();
+                const message = item.querySelector('.last-message')?.textContent.toLowerCase() || '';
+                
+                if (name.includes(query) || message.includes(query)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+        
+        // Переход к диалогу при клике
+        const dialogItems = document.querySelectorAll('.dialog-item');
+        dialogItems.forEach(item => {
+            item.addEventListener('click', function() {
+                const dialogId = this.dataset.dialogId;
+                window.location.href = `/chat/${dialogId}/`;
+            });
+        });
+    });
+</script>
+{% endblock %} 

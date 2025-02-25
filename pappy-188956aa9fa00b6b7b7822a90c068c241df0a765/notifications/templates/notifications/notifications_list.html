@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Уведомления | Паппи{% endblock %}
+
+{% block content %}
+<div class="notifications-container">
+    <div class="notifications-header">
+        <h1 class="page-title">
+            Уведомления
+            {% if unread_count %}
+            <span class="unread-count">{{ unread_count }}</span>
+            {% endif %}
+        </h1>
+        
+        <div class="notifications-actions">
+            {% if notifications %}
+            <button class="btn btn-outline-primary" onclick="markAllAsRead()">
+                <i class="fas fa-check-double"></i> Отметить все как прочитанные
+            </button>
+            <button class="btn btn-outline-danger" onclick="clearAllNotifications()">
+                <i class="fas fa-trash"></i> Очистить все
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% if notifications %}
+    <div class="notifications-list">
+        {% for notification in notifications %}
+        <div class="notification-item {% if not notification.is_read %}unread{% endif %}" data-id="{{ notification.id }}">
+            <div class="notification-icon">
+                {% if notification.type == 'message' %}
+                <i class="fas fa-envelope"></i>
+                {% elif notification.type == 'match' %}
+                <i class="fas fa-heart"></i>
+                {% elif notification.type == 'product_status' %}
+                <i class="fas fa-tag"></i>
+                {% elif notification.type == 'verification' %}
+                <i class="fas fa-user-check"></i>
+                {% endif %}
+            </div>
+            
+            <div class="notification-content">
+                <div class="notification-header">
+                    <h3 class="notification-title">{{ notification.title }}</h3>
+                    <span class="notification-time">{{ notification.created|date:"d.m.Y H:i" }}</span>
+                </div>
+                
+                <p class="notification-text">{{ notification.text }}</p>
+                
+                <div class="notification-actions">
+                    {% if notification.link %}
+                    <a href="{{ notification.link }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-external-link-alt"></i> Перейти
+                    </a>
+                    {% endif %}
+                    
+                    {% if not notification.is_read %}
+                    <button class="btn btn-sm btn-outline-primary" onclick="markAsRead({{ notification.id }})">
+                        <i class="fas fa-check"></i> Отметить как прочитанное
+                    </button>
+                    {% endif %}
+                    
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteNotification({{ notification.id }})">
+                        <i class="fas fa-trash"></i> Удалить
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="no-notifications">
+        <i class="fas fa-bell-slash"></i>
+        <h2>У вас нет уведомлений</h2>
+        <p>Здесь будут появляться уведомления о новых сообщениях и других событиях</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/notifications.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/notifications.js' %}"></script>
+{% endblock %} 

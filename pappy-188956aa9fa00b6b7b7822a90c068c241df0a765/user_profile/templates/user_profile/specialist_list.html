@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Список специалистов{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Специалисты</h1>
+    
+    <!-- Форма поиска -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <form method="get" class="d-flex">
+                <input type="text" name="q" class="form-control me-2" placeholder="Поиск по услугам или имени" value="{{ request.GET.q }}">
+                <select name="specialization" class="form-select me-2">
+                    <option value="">Все специализации</option>
+                    <option value="veterinarian" {% if request.GET.specialization == 'veterinarian' %}selected{% endif %}>Ветеринар</option>
+                    <option value="groomer" {% if request.GET.specialization == 'groomer' %}selected{% endif %}>Грумер</option>
+                    <option value="trainer" {% if request.GET.specialization == 'trainer' %}selected{% endif %}>Кинолог</option>
+                </select>
+                <button type="submit" class="btn btn-primary">Поиск</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Список специалистов -->
+    <div class="row">
+        {% if specialists %}
+            {% for specialist in specialists %}
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ specialist.user.get_full_name }}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                {{ specialist.get_specialization_display }}
+                                {% if specialist.experience_years %}
+                                    • Опыт: {{ specialist.experience_years }} лет
+                                {% endif %}
+                            </h6>
+                            {% if specialist.services %}
+                                <p class="card-text">{{ specialist.services }}</p>
+                            {% endif %}
+                            {% if specialist.price_range %}
+                                <p class="card-text"><small class="text-muted">Цены: {{ specialist.price_range }}</small></p>
+                            {% endif %}
+                            <a href="{% url 'user_profile:specialist_detail' pk=specialist.pk %}" class="btn btn-primary">Подробнее</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col">
+                <div class="alert alert-info">
+                    Специалисты не найдены
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

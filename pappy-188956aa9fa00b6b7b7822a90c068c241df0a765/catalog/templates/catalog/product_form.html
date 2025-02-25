@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="product-form-container">
+    <div class="page-header">
+        <h1>{{ title }}</h1>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="product-form" id="product-form" title="Форма {{ title }}">
+        {% csrf_token %}
+        
+        <div class="form-section">
+            <h2>Основная информация</h2>
+            
+            <div class="form-group">
+                <label for="{{ form.title.id_for_label }}" class="required">Название</label>
+                {{ form.title }}
+                {% if form.title.errors %}
+                <div class="form-errors">
+                    {% for error in form.title.errors %}
+                    <p class="error-message">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.category.id_for_label }}" class="required">Категория</label>
+                {{ form.category }}
+                {% if form.category.errors %}
+                <div class="form-errors">
+                    {% for error in form.category.errors %}
+                    <p class="error-message">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.price.id_for_label }}" class="required">Цена</label>
+                    {{ form.price }}
+                    {% if form.price.errors %}
+                    <div class="form-errors">
+                        {% for error in form.price.errors %}
+                        <p class="error-message">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.condition.id_for_label }}" class="required">Состояние</label>
+                    {{ form.condition }}
+                    {% if form.condition.errors %}
+                    <div class="form-errors">
+                        {% for error in form.condition.errors %}
+                        <p class="error-message">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.location.id_for_label }}" class="required">Местоположение</label>
+                {{ form.location }}
+                {% if form.location.errors %}
+                <div class="form-errors">
+                    {% for error in form.location.errors %}
+                    <p class="error-message">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>Описание</h2>
+            
+            <div class="form-group">
+                <label for="{{ form.description.id_for_label }}" class="required">Описание товара</label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                <div class="form-errors">
+                    {% for error in form.description.errors %}
+                    <p class="error-message">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <p class="help-text">Подробно опишите ваш товар, укажите его особенности и преимущества.</p>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>Фотографии</h2>
+            
+            <div class="form-group">
+                <div class="drop-zone" id="drop-zone">
+                    <input type="file" name="images" id="images" multiple accept="image/*" class="file-input">
+                    <div class="drop-zone-content">
+                        <i class="fas fa-cloud-upload-alt drop-zone-icon"></i>
+                        <p class="drop-zone-text">Перетащите фотографии сюда или нажмите для выбора</p>
+                        <p class="drop-zone-info">Можно загрузить до 10 фотографий в формате JPG или PNG</p>
+                    </div>
+                </div>
+                
+                <div class="image-preview" id="image-preview">
+                    {% if product and product.images.exists %}
+                    {% for image in product.images.all %}
+                    <div class="preview-item">
+                        <img src="{{ image.image.url }}" alt="Фото {{ forloop.counter }}">
+                        <button type="button" class="remove-image" data-image-id="{{ image.id }}">×</button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+
+                {% if form.images.errors %}
+                <div class="form-errors">
+                    {% for error in form.images.errors %}
+                    <p class="error-message">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Сохранить
+            </button>
+            <a href="{% url 'catalog:my_products' %}" class="btn btn-outline-primary">
+                <i class="fas fa-times"></i> Отмена
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('images');
+    const preview = document.getElementById('image-preview');
+    const form = document.getElementById('product-form');
+    
+    // Drag and drop handling
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight(e) {
+        dropZone.classList.add('dragover');
+    }
+
+    function unhighlight(e) {
+        dropZone.classList.remove('dragover');
+    }
+
+    dropZone.addEventListener('drop', handleDrop, false);
+    fileInput.addEventListener('change', handleFiles, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles({ target: { files } });
+    }
+
+    function handleFiles(e) {
+        const files = Array.from(e.target.files);
+        
+        // Validate files
+        const invalidFiles = files.filter(file => {
+            const validTypes = ['image/jpeg', 'image/png'];
+            const maxSize = 5 * 1024 * 1024; // 5MB
+            
+            if (!validTypes.includes(file.type)) {
+                alert(`Файл "${file.name}" имеет неподдерживаемый формат. Разрешены только JPG и PNG.`);
+                return true;
+            }
+            
+            if (file.size > maxSize) {
+                alert(`Файл "${file.name}" слишком большой. Максимальный размер - 5MB.`);
+                return true;
+            }
+            
+            return false;
+        });
+
+        if (invalidFiles.length) {
+            return;
+        }
+
+        // Check total number of files
+        const currentFiles = preview.querySelectorAll('.preview-item').length;
+        if (currentFiles + files.length > 10) {
+            alert('Можно загрузить максимум 10 фотографий.');
+            return;
+        }
+
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const div = document.createElement('div');
+                div.className = 'preview-item';
+                div.innerHTML = `
+                    <img src="${e.target.result}" alt="${file.name}">
+                    <button type="button" class="remove-image">×</button>
+                `;
+                preview.appendChild(div);
+
+                div.querySelector('.remove-image').addEventListener('click', function() {
+                    div.remove();
+                });
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Remove existing images
+    document.querySelectorAll('.remove-image').forEach(button => {
+        button.addEventListener('click', async function() {
+            const imageId = this.dataset.imageId;
+            if (!imageId) {
+                this.closest('.preview-item').remove();
+                return;
+            }
+
+            if (!confirm('Вы уверены, что хотите удалить это изображение?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/images/${imageId}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                });
+
+                if (response.ok) {
+                    this.closest('.preview-item').remove();
+                } else {
+                    const data = await response.json();
+                    alert(data.error || 'Произошла ошибка при удалении изображения');
+                }
+            } catch (error) {
+                alert('Произошла ошибка при удалении изображения');
+            }
+        });
+    });
+
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        const submitButton = form.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Сохранение...';
+    });
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Уведомления{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Уведомления</h1>
+    
+    <div class="notifications-controls mb-4">
+        <form method="post" action="{% url 'notifications:mark-all-read' %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary">Отметить все как прочитанные</button>
+        </form>
+        
+        <form method="post" action="{% url 'notifications:clear-all' %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Удалить все</button>
+        </form>
+    </div>
+    
+    <div class="notifications-list">
+        {% for notification in notifications %}
+            <div class="card mb-3 {% if not notification.is_read %}border-primary{% endif %}">
+                <div class="card-body">
+                    <h5 class="card-title">{{ notification.title }}</h5>
+                    <p class="card-text">{{ notification.text }}</p>
+                    <div class="notification-meta">
+                        <small class="text-muted">{{ notification.created|date:"d.m.Y H:i" }}</small>
+                        {% if notification.link %}
+                            <a href="{{ notification.link }}" class="btn btn-sm btn-primary">Перейти</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="alert alert-info">У вас нет уведомлений</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

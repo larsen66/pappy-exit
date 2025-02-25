@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Статус верификации | Паппи{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header">
+        <h1 class="page-title">Статус верификации</h1>
+    </div>
+    
+    <div class="profile-content">
+        <div class="profile-sidebar">
+            <div class="profile-menu">
+                <a href="{% url 'user_profile:settings' %}" class="menu-item">
+                    <i class="fas fa-user"></i> Основные настройки
+                </a>
+                <a href="{% url 'user_profile:verification_status' %}" class="menu-item active">
+                    <i class="fas fa-clock"></i> Статус верификации
+                </a>
+            </div>
+        </div>
+        
+        <div class="profile-main">
+            <div class="profile-section">
+                <div class="verification-status">
+                    {% if profile.is_verified %}
+                    <div class="status-box status-verified">
+                        <i class="fas fa-check-circle"></i>
+                        <h3>Аккаунт верифицирован</h3>
+                        <p>Ваш аккаунт был успешно верифицирован {{ profile.verification_date|date:"d.m.Y" }}</p>
+                        
+                        <div class="status-details">
+                            <div class="detail-item">
+                                <span class="label">Тип аккаунта:</span>
+                                <span class="value">
+                                    {% if profile|isinstance:"SpecialistProfile" %}
+                                    Специалист ({{ profile.get_specialization_display }})
+                                    {% else %}
+                                    {{ profile.get_seller_type_display }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                            
+                            {% if profile.company_name %}
+                            <div class="detail-item">
+                                <span class="label">Название компании:</span>
+                                <span class="value">{{ profile.company_name }}</span>
+                            </div>
+                            {% endif %}
+                            
+                            {% if profile.inn %}
+                            <div class="detail-item">
+                                <span class="label">ИНН:</span>
+                                <span class="value">{{ profile.inn }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="status-actions">
+                            {% if profile|isinstance:"SpecialistProfile" %}
+                            <a href="{% url 'user_profile:specialist_profile' %}" class="btn btn-primary">
+                                <i class="fas fa-user-md"></i> Перейти в профиль специалиста
+                            </a>
+                            {% else %}
+                            <a href="{% url 'user_profile:seller_profile' %}" class="btn btn-primary">
+                                <i class="fas fa-store"></i> Перейти в профиль продавца
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="status-box status-pending">
+                        <i class="fas fa-clock"></i>
+                        <h3>Заявка на рассмотрении</h3>
+                        <p>Ваша заявка на верификацию находится на рассмотрении. Обычно проверка занимает 1-2 рабочих дня.</p>
+                        
+                        <div class="status-details">
+                            <div class="detail-item">
+                                <span class="label">Тип аккаунта:</span>
+                                <span class="value">
+                                    {% if profile|isinstance:"SpecialistProfile" %}
+                                    Специалист ({{ profile.get_specialization_display }})
+                                    {% else %}
+                                    {{ profile.get_seller_type_display }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                            
+                            {% if profile.company_name %}
+                            <div class="detail-item">
+                                <span class="label">Название компании:</span>
+                                <span class="value">{{ profile.company_name }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="status-info">
+                            <h4>Что дальше?</h4>
+                            <ul>
+                                <li>Мы проверим предоставленные вами документы</li>
+                                <li>Уведомим вас о результатах проверки</li>
+                                <li>В случае успешной верификации вы получите доступ ко всем преимуществам</li>
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %} 

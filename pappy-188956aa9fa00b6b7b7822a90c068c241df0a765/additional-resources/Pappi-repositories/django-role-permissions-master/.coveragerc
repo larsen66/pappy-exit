@@ -1,0 +1,13 @@
+[run]
+branch = True
+source = ./rolepermissions
+
+omit =
+    *tests/*
+    *__init__*
+
+[report]
+skip_covered = True
+
+[html]
+directory = cover

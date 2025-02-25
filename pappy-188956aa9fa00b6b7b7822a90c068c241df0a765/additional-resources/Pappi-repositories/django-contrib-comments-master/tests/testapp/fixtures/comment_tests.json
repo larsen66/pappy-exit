@@ -1,0 +1,41 @@
+[
+  {
+    "model" : "testapp.book",
+    "pk" : 1,
+    "fields" : {
+        "dewey_decimal" : "12.34"
+    }
+  },
+  {
+    "model" : "testapp.author",
+    "pk" : 1,
+    "fields" : {
+        "first_name" : "John",
+        "last_name" : "Smith"
+    }
+  },
+  {
+    "model" : "testapp.author",
+    "pk" : 2,
+    "fields" : {
+        "first_name" : "Peter",
+        "last_name" : "Jones"
+    }
+  },
+  {
+    "model" : "testapp.article",
+    "pk" : 1,
+    "fields" : {
+        "author" : 1,
+        "headline" : "Man Bites Dog"
+    }
+  },
+  {
+    "model" : "testapp.article",
+    "pk" : 2,
+    "fields" : {
+        "author" : 2,
+        "headline" : "Dog Bites Man"
+    }
+  }
+]

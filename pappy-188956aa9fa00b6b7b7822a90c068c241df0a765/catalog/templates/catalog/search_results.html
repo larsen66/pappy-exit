@@ -1,0 +1,208 @@
+{% extends "catalog/base.html" %}
+{% load static %}
+
+{% block catalog_content %}
+<div class="search-header">
+    <h1>Результаты поиска</h1>
+    {% if query %}
+    <p class="search-query">По запросу: "{{ query }}"</p>
+    {% endif %}
+    <p class="results-count">Найдено: {{ products.paginator.count }}</p>
+</div>
+
+<div class="search-filters">
+    <form method="get" class="filter-form">
+        {% if query %}
+        <input type="hidden" name="q" value="{{ query }}">
+        {% endif %}
+        
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="category">Категория</label>
+                <select name="category" id="category">
+                    <option value="">Все категории</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if current_filters.category == category.id|stringformat:"s" %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Состояние</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="condition" value="new"
+                               {% if 'new' in current_filters.condition %}checked{% endif %}>
+                        Новое
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="condition" value="used"
+                               {% if 'used' in current_filters.condition %}checked{% endif %}>
+                        Б/у
+                    </label>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label>Цена</label>
+                <div class="price-range">
+                    <input type="number" name="price_min" placeholder="От"
+                           value="{{ current_filters.price_min }}" min="0">
+                    <span>—</span>
+                    <input type="number" name="price_max" placeholder="До"
+                           value="{{ current_filters.price_max }}" min="0">
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label for="location">Местоположение</label>
+                <input type="text" name="location" id="location"
+                       value="{{ current_filters.location }}" placeholder="Введите город">
+            </div>
+
+            <div class="filter-group">
+                <label for="sort">Сортировка</label>
+                <select name="sort" id="sort">
+                    <option value="-created" {% if current_filters.sort == '-created' %}selected{% endif %}>Сначала новые</option>
+                    <option value="created" {% if current_filters.sort == 'created' %}selected{% endif %}>Сначала старые</option>
+                    <option value="price" {% if current_filters.sort == 'price' %}selected{% endif %}>Сначала дешевле</option>
+                    <option value="-price" {% if current_filters.sort == '-price' %}selected{% endif %}>Сначала дороже</option>
+                    <option value="-views" {% if current_filters.sort == '-views' %}selected{% endif %}>По популярности</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-primary">Применить</button>
+            <a href="{% url 'catalog:search' %}" class="btn btn-outline-primary">Сбросить</a>
+        </div>
+    </form>
+</div>
+
+{% if products %}
+<div class="products-grid">
+    {% for product in products %}
+    <article class="product-card">
+        <div class="product-image">
+            {% if product.images.exists %}
+                <img src="{{ product.images.first.image.url }}" alt="{{ product.title }}">
+            {% else %}
+                <img src="{% static 'images/no-image.png' %}" alt="Нет изображения">
+            {% endif %}
+            {% if user.is_authenticated %}
+            <button class="favorite-btn {% if product in user.favorites.all %}active{% endif %}"
+                    data-product-id="{{ product.id }}"
+                    title="Добавить в избранное">
+                <i class="fas fa-heart"></i>
+            </button>
+            {% endif %}
+        </div>
+        <div class="product-info">
+            <h3 class="product-title">
+                <a href="{% url 'catalog:product_detail' product.slug %}">{{ product.title }}</a>
+            </h3>
+            <p class="product-price">{{ product.price }} ₽</p>
+            <div class="product-meta">
+                <span class="product-location">
+                    <i class="fas fa-map-marker-alt"></i> {{ product.location }}
+                </span>
+                <span class="product-date">
+                    <i class="far fa-clock"></i> {{ product.created|timesince }}
+                </span>
+            </div>
+        </div>
+    </article>
+    {% endfor %}
+</div>
+
+{% if products.paginator.num_pages > 1 %}
+<nav class="pagination">
+    <ul class="pagination-list">
+        {% if products.has_previous %}
+        <li>
+            <a href="?{% if query %}q={{ query }}&{% endif %}page={{ products.previous_page_number }}{% for key, value in current_filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+               class="pagination-link">
+                <i class="fas fa-chevron-left"></i> Назад
+            </a>
+        </li>
+        {% endif %}
+
+        {% for num in products.paginator.page_range %}
+        <li>
+            <a href="?{% if query %}q={{ query }}&{% endif %}page={{ num }}{% for key, value in current_filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+               class="pagination-link {% if num == products.number %}active{% endif %}">
+                {{ num }}
+            </a>
+        </li>
+        {% endfor %}
+
+        {% if products.has_next %}
+        <li>
+            <a href="?{% if query %}q={{ query }}&{% endif %}page={{ products.next_page_number }}{% for key, value in current_filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+               class="pagination-link">
+                Вперед <i class="fas fa-chevron-right"></i>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="no-results">
+    <p>По вашему запросу ничего не найдено.</p>
+    {% if query or current_filters %}
+    <p>Попробуйте изменить параметры поиска или <a href="{% url 'catalog:search' %}">сбросить все фильтры</a>.</p>
+    {% endif %}
+    {% if user.is_authenticated %}
+    <div class="create-product">
+        <p>Хотите продать что-то похожее?</p>
+        <a href="{% url 'catalog:product_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Разместить объявление
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработка кнопок избранного
+    document.querySelectorAll('.favorite-btn').forEach(button => {
+        button.addEventListener('click', async function(e) {
+            e.preventDefault();
+            
+            const productId = this.dataset.productId;
+            
+            try {
+                const response = await fetch('{% url "catalog:toggle_favorite" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `product_id=${productId}`,
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    this.classList.toggle('active');
+                    this.title = data.is_favorite ? 'Удалить из избранного' : 'Добавить в избранное';
+                    showMessage(data.message, 'success');
+                } else {
+                    showMessage(data.error || 'Произошла ошибка', 'error');
+                }
+            } catch (error) {
+                showMessage('Произошла ошибка при обработке запроса', 'error');
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

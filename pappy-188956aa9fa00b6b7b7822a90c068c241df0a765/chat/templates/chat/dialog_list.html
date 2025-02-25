@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Сообщения{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <!-- Боковая панель со списком диалогов -->
+    <div class="chat-sidebar">
+        <div class="sidebar-header">
+            <h2>Сообщения</h2>
+            <span class="unread-badge" id="total-unread">{{ total_unread }}</span>
+        </div>
+        
+        <!-- Поиск -->
+        <div class="search-box">
+            <input type="text" id="dialog-search" placeholder="Поиск по имени или сообщению...">
+            <i class="fas fa-search"></i>
+        </div>
+        
+        <!-- Список диалогов -->
+        <div class="dialog-list">
+            {% for dialog in dialogs %}
+            <div class="dialog-item{% if dialog.unread_count %} has-unread{% endif %}" 
+                 data-dialog-id="{{ dialog.id }}"
+                 data-opponent-id="{{ dialog.opponent.id }}">
+                <div class="dialog-avatar">
+                    {% if dialog.opponent.avatar %}
+                        <img src="{{ dialog.opponent.avatar.url }}" alt="{{ dialog.opponent.get_full_name }}">
+                    {% else %}
+                        <div class="avatar-placeholder">
+                            {{ dialog.opponent.get_full_name|first|upper }}
+                        </div>
+                    {% endif %}
+                    <span class="status-indicator {% if dialog.opponent.is_online %}online{% endif %}"></span>
+                </div>
+                
+                <div class="dialog-info">
+                    <div class="dialog-header">
+                        <h3>{{ dialog.opponent.get_full_name }}</h3>
+                        <span class="last-time">
+                            {{ dialog.last_message.created_at|date:"H:i" }}
+                        </span>
+                    </div>
+                    
+                    <div class="dialog-preview">
+                        <p>{{ dialog.last_message.content|truncatechars:50 }}</p>
+                        {% if dialog.unread_count %}
+                            <span class="unread-count">{{ dialog.unread_count }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="no-dialogs">
+                <p>У вас пока нет сообщений</p>
+                <a href="{% url 'users:list' %}" class="btn btn-primary">
+                    Найти собеседника
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Основная область -->
+    <div class="chat-main">
+        <div class="select-dialog-message">
+            <i class="far fa-comments"></i>
+            <h2>Выберите диалог для начала общения</h2>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/chat.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Поиск по диалогам
+    const searchInput = document.getElementById('dialog-search');
+    const dialogItems = document.querySelectorAll('.dialog-item');
+    
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        
+        dialogItems.forEach(item => {
+            const name = item.querySelector('h3').textContent.toLowerCase();
+            const preview = item.querySelector('.dialog-preview p').textContent.toLowerCase();
+            
+            if (name.includes(query) || preview.includes(query)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+    
+    // Переход к диалогу при клике
+    dialogItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const dialogId = item.dataset.dialogId;
+            window.location.href = `/chat/${dialogId}/`;
+        });
+    });
+});
+</script>
+{% endblock %} 

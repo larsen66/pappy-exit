@@ -1,0 +1,7 @@
+include LICENSE
+include README.rst
+include docs/contributing.rst
+include docs/history.rst
+recursive-include moderation/templates *
+recursive-include moderation/fixtures *
+recursive-include moderation/locale *

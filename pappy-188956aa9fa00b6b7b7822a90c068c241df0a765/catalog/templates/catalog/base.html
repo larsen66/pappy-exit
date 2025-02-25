@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block content %}
+<div class="catalog-container">
+    <aside class="catalog-sidebar">
+        <div class="sidebar-section">
+            <h3>{% trans "Categories" %}</h3>
+            <nav class="categories-nav">
+                <ul class="categories-list">
+                    {% for category in categories %}
+                        <li class="category-item {% if category.slug == current_category.slug %}active{% endif %}">
+                            <a href="{{ category.get_absolute_url }}" class="category-link">
+                                {% if category.image %}
+                                    <img src="{{ category.image.url }}" alt="{{ category.name }}" class="category-icon">
+                                {% endif %}
+                                <span class="category-name">{{ category.name }}</span>
+                                {% if category.children.exists %}
+                                    <span class="subcategories-count">({{ category.children.count }})</span>
+                                {% endif %}
+                            </a>
+                            {% if category.children.exists %}
+                                <ul class="subcategories-list">
+                                    {% for subcategory in category.children.all %}
+                                        <li class="subcategory-item {% if subcategory.slug == current_category.slug %}active{% endif %}">
+                                            <a href="{{ subcategory.get_absolute_url }}" class="subcategory-link">
+                                                {{ subcategory.name }}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </nav>
+        </div>
+
+        {% if form %}
+        <div class="sidebar-section">
+            <h3>{% trans "Filters" %}</h3>
+            <form method="get" class="filters-form">
+                <div class="form-group">
+                    <label for="search-input">{% trans "Search" %}</label>
+                    {{ form.search }}
+                </div>
+
+                <div class="form-group">
+                    <label>{% trans "Condition" %}</label>
+                    <div class="condition-filters">
+                        {{ form.condition }}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>{% trans "Price range" %}</label>
+                    <div class="price-range">
+                        {{ form.min_price }}
+                        {{ form.max_price }}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="sort-select">{% trans "Sort by" %}</label>
+                    <select name="sort" id="sort-select" class="form-select" title="{% trans 'Sort products by' %}">
+                        <option value="newest">{% trans "Newest first" %}</option>
+                        <option value="oldest">{% trans "Oldest first" %}</option>
+                        <option value="price_low">{% trans "Price: low to high" %}</option>
+                        <option value="price_high">{% trans "Price: high to low" %}</option>
+                        <option value="popular">{% trans "Most popular" %}</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">
+                    {% trans "Apply filters" %}
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </aside>
+
+    <main class="catalog-content">
+        {% block catalog_content %}{% endblock %}
+    </main>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/catalog.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/catalog.js' %}"></script>
+{% endblock %} 

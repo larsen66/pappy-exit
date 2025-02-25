@@ -1,0 +1,189 @@
+Ты – продвинутый помощник в среде Cursor. У меня есть Django-проект «Паппи» (pappy или myproject). Я хочу **реализовать минимальный фронтенд** на Django-шаблонах (HTML + Django Template Language), чтобы вручную проверить функционал бэкенда.
+
+### Что нужно сделать
+
+1. **Создать (или проверить) структуру папок для шаблонов**:
+   - Обычно в настройках `settings.py` должно быть:
+     ```python
+     TEMPLATES = [
+       {
+         'BACKEND': 'django.template.backends.django.DjangoTemplates',
+         'DIRS': [BASE_DIR / 'templates'],  # папка для общих шаблонов
+         'APP_DIRS': True,
+         ...
+       },
+     ]
+     ```
+   - Создать папку `templates/` (или `myapp/templates/myapp/`) и положить туда:
+     - **base.html** (базовый макет).
+     - **index.html** (главная страница).
+     - **login.html**, **register.html** (формы авторизации/регистрации).
+     - **announcements_list.html** (просмотр объявлений).
+     - **announcement_detail.html** (детали объявления).
+     - **announcement_form.html** (создание/редактирование объявления).
+     - и т. д. (при необходимости).
+
+2. **Добавить базовый шаблон** `base.html`:
+   - В `base.html` размести `<header>` с логотипом/названием «Паппи», меню (ссылки на главную, авторизацию, каталог, и т.д.).
+   - Содержимое страниц вставляется через тег `{% block content %}{% endblock %}`.
+
+3. **Реализовать простые view-функции** или CBV (Class-Based Views), которые **рендерят** эти шаблоны:
+   - Пример:  
+     ```python
+     # myapp/views.py
+     from django.shortcuts import render, redirect
+     from .models import Announcement
+     from .forms import AnnouncementForm
+
+     def index_view(request):
+         return render(request, "myapp/index.html")
+
+     def announcements_list_view(request):
+         ads = Announcement.objects.all()
+         return render(request, "myapp/announcements_list.html", {"ads": ads})
+
+     def announcement_create_view(request):
+         if request.method == "POST":
+             form = AnnouncementForm(request.POST, request.FILES)
+             if form.is_valid():
+                 form.save()
+                 return redirect("announcements_list")
+         else:
+             form = AnnouncementForm()
+         return render(request, "myapp/announcement_form.html", {"form": form})
+     ```
+   - В `urls.py` сделай роуты:
+     ```python
+     from django.urls import path
+     from myapp.views import index_view, announcements_list_view, announcement_create_view
+
+     urlpatterns = [
+       path('', index_view, name='index'),
+       path('announcements/', announcements_list_view, name='announcements_list'),
+       path('announcements/new/', announcement_create_view, name='announcement_create'),
+       ...
+     ]
+     ```
+
+4. **Шаблоны**:
+   - **`index.html`**:  
+     ```html
+     {% extends "myapp/base.html" %}
+     {% block content %}
+       <h1>Добро пожаловать в Паппи!</h1>
+       <p>Здесь можно посмотреть <a href="{% url 'announcements_list' %}">объявления</a>, 
+       <a href="{% url 'login' %}">войти</a> или <a href="{% url 'register' %}">зарегистрироваться</a>.</p>
+     {% endblock %}
+     ```
+   - **`announcements_list.html`**:  
+     ```html
+     {% extends "myapp/base.html" %}
+     {% block content %}
+       <h2>Список объявлений</h2>
+       <ul>
+         {% for ad in ads %}
+           <li>
+             <a href="#">{{ ad.title }}</a> — {{ ad.category }}
+           </li>
+         {% endfor %}
+       </ul>
+       <p><a href="{% url 'announcement_create' %}">Создать объявление</a></p>
+     {% endblock %}
+     ```
+   - **`announcement_form.html`** (создание/редактирование):
+     ```html
+     {% extends "myapp/base.html" %}
+     {% block content %}
+       <h2>Создать объявление</h2>
+       <form method="post" enctype="multipart/form-data">
+         {% csrf_token %}
+         {{ form.as_p }}
+         <button type="submit">Сохранить</button>
+       </form>
+     {% endblock %}
+     ```
+   - **`login.html`**, **`register.html`** – аналогично, `<form>…</form>` с нужными полями.
+
+5. **Авторизация (login, register)**:
+   - Если уже есть user-модель и логика, создай view `login_view`, `register_view`. 
+   - Пример `login_view`:
+     ```python
+     def login_view(request):
+         if request.method == "POST":
+             phone = request.POST.get("phone")
+             code = request.POST.get("code")
+             # проверить код, логинить
+             ...
+             return redirect("index")
+         return render(request, "myapp/login.html")
+     ```
+   - В шаблоне `login.html`:
+     ```html
+     {% extends "myapp/base.html" %}
+     {% block content %}
+     <h2>Вход</h2>
+     <form method="post">
+       {% csrf_token %}
+       <p>Телефон: <input type="text" name="phone"></p>
+       <p>Код: <input type="text" name="code"></p>
+       <button type="submit">Войти</button>
+     </form>
+     {% endblock %}
+     ```
+
+6. **Добавить ссылки и кнопки** для остальных фич (корзина, чат, лайки):
+   - Можно не делать всё изящно, главное – чтобы была возможность нажимать кнопку, вызывать нужный view.  
+   - Для «котосиндера» сделай страницу `tinder.html` (или `sinder.html`), где показываются карточки объявлений (JS-ом можно имитировать свайп). Или хоть ссылки «Лайк» / «Дизлайк».
+
+7. **Опционально**: добавь CSS (Bootstrap) для приличного внешнего вида, подключив CDN:
+   ```html
+   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+
+
+
+Ты – продвинутый помощник в среде Cursor, и у нас есть Django-бэкенд для проекта «Паппи». Теперь нам нужен **визуальный интерфейс**, чтобы протестировать ключевые функции с клиентской стороны (по сути, фронтенд-слой).
+
+### Что нужно сделать
+
+1. **Анализ существующего кода**:
+   - Посмотри все папки и файлы приложения «Паппи» (myproject или как оно у нас называется).
+   - Посмотри, есть ли уже какие-то шаблоны Django (HTML), 
+   - Изучи, как настроен роутинг в Django (urls.py), какие views уже есть.
+
+2. **Создать или доработать UI**:
+   - Если используется классический Django (шаблоны), то создай/дополни папку templates/ (например, "core/templates/..." и т.д.), чтобы отобразить формы входа/регистрации, список объявлений, корзину, сообщения (чат), профили пользователей и пр.
+   - Если используется DRF (API-only) – или набор HTML/JS, которые шлют AJAX-запросы к эндпоинтам, чтобы визуально проверить функционал (регистрация, объявления, лайки, корзина и т. д.).
+   - Реализуй основные страницы/маршруты:
+     - **Главная** (список категорий, карусели «Животные», «Специалисты»).
+     - **Страница регистрации/логина**.
+     - **Страница «Мои объявления»** (создание/редактирование, смена статуса).
+     - **Страница «Каталог»** (список объявлений, фильтрация).
+     - **Синдер** (для свайпов лайк/дизлайк).
+     - **Корзина** (если есть товары).
+     - **Сообщения** (чат между пользователями).
+     - **Профиль** (продавца, покупателя, приюта).
+   - Используй **минимальный HTML/CSS/JS** или удобный фреймворк (Bootstrap, Tailwind) для быстрой стилизации.
+
+3. **Интеграция с бэкендом**:
+   - Проверь вьюхи (или API) и сделай формы/запросы так, чтобы легко тестировать:
+     - Регистрацию/авторизацию.
+     - Создание/редактирование объявлений.
+     - Добавление в избранное, в корзину.
+     - Отправку сообщений.
+     - Оценки/отзывы/рейтинги.
+     - VIP-подписку (заглушка оплаты).
+     - Потеряшки и т. д.  
+   - Если часть функционала (например, «Тиндер»-свайпы) требует JS-анимаций, подключи простую JS-библиотеку (SwiperJS или что-то подобное) и расскажи, как это работает.
+
+4. **Результат**:
+   - Сгенерируй полноценные HTML-шаблоны (или React/Vue-компоненты) с комментариями, как их подключать.
+   - Объясни, как всё запустить (команды `npm install`, `npm run dev`, или если на чистом Django-шаблоне – `python manage.py runserver`).
+   - Если нужны правки в settings.py (STATIC_URL, шаблоны) – опиши их.
+
+5. **Формат ответа**:
+   - Сначала проанализируй файлы. Скажи, где уже есть заготовки.  
+   - Затем сгенерируй (или дополни) несколько основных HTML-шаблонов (например, base.html, login.html, announcements_list.html, и т.д.), укажи, куда их класть.  
+   - Покажи, как они ссылаются на URL django.  
+   - При необходимости добавь JS-обработчики лайков, кнопок «В корзину» и т.д.
+
+Приступай к генерации кода. Если где-то не хватает инфы, переспроси. В результате должен получиться **минимальный, но работающий** интерфейс, позволяющий проверить весь бэкенд «Паппи» глазами пользователя.
